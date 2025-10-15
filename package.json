@@ -1,12 +1,11 @@
 {
   "name": "divine-sisters-yamaha-bot",
   "version": "1.0.0",
-  "description": "Divine Sisters Yamaha Bot - Roblox rank system",
+  "description": "Discord -> Roblox ranking bot (noblox.js)",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "node index.js",
-    "deploy": "node deploy-commands.js"
+    "deploy-commands": "node deploy-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
