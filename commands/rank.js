@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const noblox = require('noblox.js');
 
 module.exports = {
@@ -15,13 +15,10 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
-        // ✅ Only allow users with this specific Discord role ID
-        const allowedRoleId = '1396501423692447865';
-        const member = interaction.member;
-
-        if (!member.roles.cache.has(allowedRoleId)) {
+        // ✅ Only allow server admins to use this command (temporary)
+        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return interaction.reply({
-                content: "❌ | You do not have permission to use this command.",
+                content: "❌ | Only **Administrators** can use this command.",
                 ephemeral: true
             });
         }
@@ -32,16 +29,16 @@ module.exports = {
         await interaction.deferReply({ ephemeral: false });
 
         try {
-            // ✅ Log into Roblox using your cookie
+            // ✅ Log into Roblox using your stored cookie
             await noblox.setCookie(process.env.ROBLOX_COOKIE);
 
-            // ✅ Get Roblox user ID
+            // ✅ Get Roblox user ID from username
             const userId = await noblox.getIdFromUsername(username);
 
-            // ✅ Rank the player
+            // ✅ Rank the user in your group
             await noblox.setRank(process.env.GROUP_ID, userId, roleId);
 
-            await interaction.editReply(`✅ | Successfully ranked **${username}** to role ID **${roleId}**.`);
+            await interaction.editReply(`✅ | Successfully ranked **${username}** to role ID **${roleId}**!`);
         } catch (error) {
             console.error(error);
             await interaction.editReply(`❌ | Failed to rank **${username}**.\nError: \`${error.message}\``);
