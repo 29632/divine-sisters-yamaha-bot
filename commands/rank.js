@@ -1,47 +1,42 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const noblox = require('noblox.js');
+import { SlashCommandBuilder } from 'discord.js';
+import noblox from 'noblox.js';
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('rank')
-        .setDescription('Ranks a Roblox player in the group')
-        .addStringOption(option =>
-            option.setName('username')
-                .setDescription('Enter the Roblox username')
-                .setRequired(true))
-        .addIntegerOption(option =>
-            option.setName('roleid')
-                .setDescription('Enter the Roblox group role ID')
-                .setRequired(true)),
+export default {
+  data: new SlashCommandBuilder()
+    .setName('rank')
+    .setDescription('Assign a Roblox group rank to a player')
+    .addStringOption(option =>
+      option.setName('username')
+        .setDescription('Roblox username')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('roleid')
+        .setDescription('Roblox group role ID')
+        .setRequired(true)),
 
-    async execute(interaction) {
-        // ✅ Only allow server admins to use this command (temporary)
-        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply({
-                content: "❌ | Only **Administrators** can use this command.",
-                ephemeral: true
-            });
-        }
+  async execute(interaction) {
+    await interaction.deferReply();
 
-        const username = interaction.options.getString('username');
-        const roleId = interaction.options.getInteger('roleid');
+    try {
+      // ✅ Temporary admin bypass (for owners or admins)
+      const isAdmin = interaction.member.permissions.has('Administrator');
+      const allowedRoleId = '1396501423692447865';
+      const hasRole = interaction.member.roles.cache.has(allowedRoleId);
 
-        await interaction.deferReply({ ephemeral: false });
+      if (!isAdmin && !hasRole) {
+        return interaction.editReply('❌ You do not have permission to use this command.');
+      }
 
-        try {
-            // ✅ Log into Roblox using your stored cookie
-            await noblox.setCookie(process.env.ROBLOX_COOKIE);
+      await noblox.setCookie(process.env.ROBLOX_COOKIE);
+      const username = interaction.options.getString('username');
+      const roleId = interaction.options.getInteger('roleid');
+      const userId = await noblox.getIdFromUsername(username);
 
-            // ✅ Get Roblox user ID from username
-            const userId = await noblox.getIdFromUsername(username);
-
-            // ✅ Rank the user in your group
-            await noblox.setRank(process.env.GROUP_ID, userId, roleId);
-
-            await interaction.editReply(`✅ | Successfully ranked **${username}** to role ID **${roleId}**!`);
-        } catch (error) {
-            console.error(error);
-            await interaction.editReply(`❌ | Failed to rank **${username}**.\nError: \`${error.message}\``);
-        }
-    },
+      await noblox.setRank(process.env.GROUP_ID, userId, roleId);
+      await interaction.editReply(`✅ Successfully ranked **${username}** to role ID **${roleId}**.`);
+    } catch (error) {
+      console.error(error);
+      await interaction.editReply(`❌ Failed to rank player: ${error.message}`);
+    }
+  }
 };
